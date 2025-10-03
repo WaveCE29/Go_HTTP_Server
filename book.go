@@ -29,7 +29,7 @@ func createBook(c *fiber.Ctx) error {
 	book := new(Book)
 
 	if err := c.BodyParser(book); err != nil {
-		return err
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 
 	books = append(books, *book)
