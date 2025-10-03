@@ -1,0 +1,32 @@
+@host=http://localhost:8080
+
+###
+GET {{host}}/books
+Accept: application/json
+Content-Type: application/json
+###
+GET {{host}}/books/1
+Accept: application/json
+Content-Type: application/json
+###
+POST {{host}}/books
+Content-Type: application/json
+
+{
+    "id": 3,
+    "title": "Golang",
+    "author": "mark"
+}
+
+###
+PUT {{host}}/books/1
+Content-Type: application/json
+
+{
+    "title": "101 Great Answers to the Toughest Interview Questions",
+    "author": "mark"
+}
+
+###
+DELETE {{host}}/books/1
+Content-Type: application/json

@@ -1,31 +1,98 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hello" {
-		http.Error(w, "404 not found.", http.StatusNotFound)
-		return
-	}
+type Book struct {
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+}
 
-	if r.Method != "GET" {
-		http.Error(w, "Method is not supported.", http.StatusNotFound)
-	}
+var books = []Book{
+	{ID: 1, Title: "The Great Gatsby", Author: "F. Scott Fitzgerald"},
+	{ID: 2, Title: "To Kill a Mockingbird", Author: "F. Scott Fitzgerald"}}
 
-	w.Write([]byte("Hello!"))
+func main() {
+
+	app := fiber.New()
+
+	app.Get("/books", getBooks)
+	app.Get("/books/:id", getBook)
+	app.Post("/books", createBook)
+	app.Put("/books/:id", updateBook)
+	app.Delete("/books/:id", deleteBook)
+	app.Listen(":8080")
 
 }
 
-func main() {
-	http.HandleFunc("/hello", helloHandler)
+func getBooks(c *fiber.Ctx) error {
+	return c.JSON(books)
+}
 
-	fmt.Printf("Starting server at port 8080\n")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
+func getBook(c *fiber.Ctx) error {
+	bookID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
 	}
 
+	for _, book := range books {
+		if book.ID == bookID {
+			return c.JSON(book)
+		}
+	}
+
+	return c.Status(404).SendString("Book not found")
+}
+
+func createBook(c *fiber.Ctx) error {
+	book := new(Book)
+
+	if err := c.BodyParser(book); err != nil {
+		return err
+	}
+
+	books = append(books, *book)
+
+	return c.JSON(books)
+}
+
+func updateBook(c *fiber.Ctx) error {
+	bookID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
+	}
+	bookUpdate := new(Book)
+
+	if err := c.BodyParser(bookUpdate); err != nil {
+		return err
+	}
+
+	for i, book := range books {
+		if book.ID == bookID {
+			books[i].Title = bookUpdate.Title
+			books[i].Author = bookUpdate.Author
+			return c.JSON(books[i])
+		}
+	}
+	return c.Status(404).SendString("Book not found")
+}
+
+func deleteBook(c *fiber.Ctx) error {
+	bookID, err := strconv.Atoi(c.Params("id"))
+
+	if err != nil {
+		return c.Status(400).SendString(err.Error())
+	}
+
+	for _, book := range books {
+		if book.ID == bookID {
+			books = append(books[:bookID-1], books[bookID:]...)
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+	}
+	return c.Status(404).SendString("Book not found")
 }
